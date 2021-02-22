@@ -1,0 +1,33 @@
+{
+  "folders": [
+    {
+      "name": "app",
+      "path": "app"
+    },
+    {
+      "name": "test",
+      "path": "test"
+    }
+  ],
+  "settings": {
+    "al.codeAnalyzers": [
+      "${CodeCop}",
+      "${UICop}"
+    ],
+    "al.assemblyProbingPaths": [
+      "./.netpackages",
+      "C:/Windows/assembly/"
+    ],
+    "CRS.AlSubFolderName": "src",
+    "CRS.ExtensionObjectNamePattern": "",
+    "CRS.FileNamePattern": "<ObjectNameShort>.<ObjectTypeShortPascalCase>.al",
+    "CRS.FileNamePatternExtensions": "<ObjectNameShort>.<ObjectTypeShortPascalCase>.al",
+    "CRS.FileNamePatternPageCustomizations": "<ObjectNameShort>.<ObjectTypeShortPascalCase>.al",
+    "CRS.ObjectNamePrefix": "CCO",
+    "CRS.ObjectNameSuffix": "",
+    "CRS.RemovePrefixFromFilename": true,
+    "al.enableCodeActions": true,
+    "CRS.RenameWithGit": false,
+    "al.editorServicesLogLevel": "Verbose"
+  }
+}
