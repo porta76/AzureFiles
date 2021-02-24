@@ -1,4 +1,3 @@
-//TODO
 codeunit 52100 "Azure File Functions"
 {
     procedure GetFilesFromShare(var AzureFileShare: Record "Azure Files")
