@@ -26,8 +26,30 @@ table 52101 "Azure Files"
             Clustered = true;
         }
     }
-
     var
-        myInt: Integer;
+        SubPath: List of [Text];
+
+    procedure GetSubPath(): Text
+    var
+        Directory: Text;
+        subPathToReturn: Text;
+    begin
+        foreach Directory in SubPath do
+            subPathToReturn := subPathToReturn + '/' + Directory;
+
+        exit(subPathToReturn);
+    end;
+
+    procedure SetSubPath()
+    var
+        Directory: Text;
+        subPathToReturn: Text;
+    begin
+        if Rec.Name <> '. .' then
+            SubPath.Add(Rec.Name)
+        else
+            if SubPath.Count > 0 then
+                SubPath.RemoveAt(SubPath.Count);
+    end;
 
 }

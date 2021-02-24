@@ -9,25 +9,33 @@ codeunit 52100 "Azure File Functions"
         TextResponse: Text;
         XMLDoc: XmlDocument;
         UrlEndPoint: Text;
+        DownloadInStream: InStream;
     begin
 
-        AzureFileSetup.FindFirst();
-        AzureFileSetup.TestField(Account);
-        AzureFileSetup.TestField("Root Share");
-        AzureFileSetup.TestField("Sas Token");
+        InitAzure(AzureFileSetup);
 
         Client.DefaultRequestHeaders.Add('User-Agent', 'Dynamics 365');
-        UrlEndPoint := StrSubstNo(ShareUrl, AzureFileSetup.Account, AzureFileSetup."Root Share", AzureFileSetup."Sas Token");
+
+        if AzureFileShare.Type <> AzureFileShare.Type::File then
+            UrlEndPoint := StrSubstNo(ShareUrl, AzureFileSetup.Account, AzureFileSetup."Root Share" + AzureFileShare.GetSubPath(), AzureFileSetup."Sas Token")
+        else
+            UrlEndPoint := StrSubstNo(DownloadUrl, AzureFileSetup.Account, AzureFileSetup."Root Share" + AzureFileShare.GetSubPath(), AzureFileShare.Name, AzureFileSetup."Sas Token");
+
         if not Client.get(UrlEndPoint, Response) then
             Error(WebServiceCall_err);
 
         if not Response.IsSuccessStatusCode then
             Error(WebServiceResponse_err, Response.HttpStatusCode, Response.ReasonPhrase);
 
-        Response.Content.ReadAs(TextResponse);
-        XmlDocument.ReadFrom(TextResponse, XMLDoc);
-        PopulateDirectories(AzureFileShare, XMLDoc);
-        PopulateFiles(AzureFileShare, XMLDoc);
+        if AzureFileShare.Type <> AzureFileShare.Type::File then begin
+            Response.Content.ReadAs(TextResponse);
+            XmlDocument.ReadFrom(TextResponse, XMLDoc);
+            PopulateDirectories(AzureFileShare, XMLDoc);
+            PopulateFiles(AzureFileShare, XMLDoc);
+        end else begin
+            Response.Content.ReadAs(DownloadInStream);
+            File.DownloadFromStream(DownloadInStream, 'Download file', '', '*.*', AzureFileShare.Name);
+        end;
 
     end;
 
@@ -39,6 +47,9 @@ codeunit 52100 "Azure File Functions"
         innerXMLNode: XmlNode;
     begin
         XMLDoc.SelectNodes(DirectoryNode, XMLNodeList);
+        AzureFileShare.Name := '. .';
+        AzureFileShare.Type := AzureFileShare.Type::Directory;
+        AzureFileShare.insert;
         foreach XMLNode in XMLNodeList do begin
             XMLNode.SelectSingleNode(NameNode, innerXMLNode);
             AzureFileShare.Name := innerXMLNode.AsXmlElement().InnerText();
@@ -65,8 +76,17 @@ codeunit 52100 "Azure File Functions"
         end;
     end;
 
+    local procedure InitAzure(var AzureFileSetup: Record "Azure Files Setup")
+    begin
+        AzureFileSetup.FindFirst();
+        AzureFileSetup.TestField(Account);
+        AzureFileSetup.TestField("Root Share");
+        AzureFileSetup.TestField("Sas Token");
+    end;
+
     var
         ShareUrl: Label 'https://%1.file.core.windows.net/%2%3&restype=directory&comp=list';
+        DownloadUrl: Label 'https://%1.file.core.windows.net/%2/%3%4';
         FileNode: Label '//EnumerationResults/Entries/File';
         DirectoryNode: Label '//EnumerationResults/Entries/Directory';
         NameNode: Label 'Name';

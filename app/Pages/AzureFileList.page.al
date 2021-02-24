@@ -17,7 +17,19 @@ page 52101 "Azure File List"
                 field(Name; rec.Name)
                 {
                     ApplicationArea = All;
+                    Style = StrongAccent;
+                    StyleExpr = IsBold;
 
+                    trigger OnDrillDown()
+                    var
+                        AzureFiles: Codeunit "Azure File Functions";
+                    begin
+                        if Rec.Type = Rec.Type::Directory then begin
+                            Rec.SetSubPath();
+                            Rec.DeleteAll();
+                        end;
+                        AzureFiles.GetFilesFromShare(Rec);
+                    end;
                 }
                 field(Size; rec.Size)
                 {
@@ -50,7 +62,6 @@ page 52101 "Azure File List"
                 trigger OnAction();
                 var
                     AzureFileFunction: Codeunit "Azure File Functions";
-                    AzureFiles: Record "Azure Files" temporary;
                 begin
                     Rec.DeleteAll();
                     AzureFileFunction.GetFilesFromShare(Rec);
@@ -58,4 +69,15 @@ page 52101 "Azure File List"
             }
         }
     }
+    trigger OnAfterGetRecord()
+    begin
+        if rec.Type = rec.Type::Directory then
+            IsBold := true
+        else
+            IsBold := false;
+    end;
+
+    var
+        [InDataSet]
+        IsBold: Boolean;
 }
