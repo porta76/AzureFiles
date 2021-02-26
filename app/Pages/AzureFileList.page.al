@@ -4,7 +4,6 @@ page 52101 "Azure File List"
     ApplicationArea = All;
     UsageCategory = Lists;
     SourceTable = "Azure Files";
-    SourceTableTemporary = true;
     SourceTableView = sorting(Type, Name) order(ascending);
 
 
@@ -25,10 +24,10 @@ page 52101 "Azure File List"
                         AzureFiles: Codeunit "Azure File Functions";
                     begin
                         if Rec.Type = Rec.Type::Directory then begin
-                            Rec.SetSubPath();
+                            Rec.SetSubPath(SubPath);
                             Rec.DeleteAll();
                         end;
-                        AzureFiles.GetFilesFromShare(Rec);
+                        AzureFiles.GetFilesFromShare(Rec, Rec.GetSubPath(SubPath));
                     end;
                 }
                 field(Size; rec.Size)
@@ -64,7 +63,41 @@ page 52101 "Azure File List"
                     AzureFileFunction: Codeunit "Azure File Functions";
                 begin
                     Rec.DeleteAll();
-                    AzureFileFunction.GetFilesFromShare(Rec);
+                    AzureFileFunction.GetFilesFromShare(Rec, rec.GetSubPath(SubPath));
+                end;
+            }
+
+            action(ImportFiles)
+            {
+                ApplicationArea = All;
+                Image = Import;
+                Promoted = true;
+                PromotedIsBig = true;
+                PromotedCategory = Process;
+                trigger OnAction();
+                begin
+                    Xmlport.Run(52100, true, true);
+                end;
+            }
+            action(ExportFiles)
+            {
+                ApplicationArea = All;
+                Image = Export;
+                Promoted = true;
+                PromotedIsBig = true;
+                PromotedCategory = Process;
+                trigger OnAction();
+                var
+                    OStream: OutStream;
+                    IStream: InStream;
+                    TempBlob: Codeunit "Temp Blob";
+                    Filename: Text;
+                begin
+                    TempBlob.CreateOutStream(OStream);
+                    Xmlport.Export(52100, OStream, Rec);
+                    TempBlob.CreateInStream(IStream);
+                    Filename := 'demo.xml';
+                    DownloadFromStream(IStream, '', '', '*.*', Filename);
                 end;
             }
         }
@@ -77,7 +110,14 @@ page 52101 "Azure File List"
             IsBold := false;
     end;
 
+    trigger OnOpenPage()
+    begin
+        rec.DeleteAll();
+        Clear(SubPath);
+    end;
+
     var
         [InDataSet]
         IsBold: Boolean;
+        SubPath: List of [Text];
 }

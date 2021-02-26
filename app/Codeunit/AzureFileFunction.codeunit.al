@@ -1,6 +1,6 @@
 codeunit 52100 "Azure File Functions"
 {
-    procedure GetFilesFromShare(var AzureFileShare: Record "Azure Files")
+    procedure GetFilesFromShare(var AzureFileShare: Record "Azure Files"; SubPath: Text)
     var
         AzureFileSetup: Record "Azure Files Setup";
         Client: HttpClient;
@@ -16,9 +16,9 @@ codeunit 52100 "Azure File Functions"
         Client.DefaultRequestHeaders.Add('User-Agent', 'Dynamics 365');
 
         if AzureFileShare.Type <> AzureFileShare.Type::File then
-            UrlEndPoint := StrSubstNo(ShareUrl, AzureFileSetup.Account, AzureFileSetup."Root Share" + AzureFileShare.GetSubPath(), AzureFileSetup."Sas Token")
+            UrlEndPoint := StrSubstNo(ShareUrl, AzureFileSetup.Account, AzureFileSetup."Root Share" + SubPath, AzureFileSetup."Sas Token")
         else
-            UrlEndPoint := StrSubstNo(DownloadUrl, AzureFileSetup.Account, AzureFileSetup."Root Share" + AzureFileShare.GetSubPath(), AzureFileShare.Name, AzureFileSetup."Sas Token");
+            UrlEndPoint := StrSubstNo(DownloadUrl, AzureFileSetup.Account, AzureFileSetup."Root Share" + SubPath, AzureFileShare.Name, AzureFileSetup."Sas Token");
 
         if not Client.get(UrlEndPoint, Response) then
             Error(WebServiceCall_err);
@@ -38,6 +38,29 @@ codeunit 52100 "Azure File Functions"
 
     end;
 
+    procedure GetFilesFromFolder()
+    var
+        AzureFileSetup: Record "Azure Files Setup";
+        Client: HttpClient;
+        Response: HttpResponseMessage;
+        TextResponse: Text;
+        XMLDoc: XmlDocument;
+        UrlEndPoint: Text;
+        DownloadInStream: InStream;
+    begin
+        InitAzure(AzureFileSetup);
+
+        Client.DefaultRequestHeaders.Add('User-Agent', 'Dynamics 365');
+        UrlEndPoint := StrSubstNo(ShareUrl, AzureFileSetup.Account, AzureFileSetup."Root Share" + '/DemoImportFolder/', AzureFileSetup."Sas Token");
+        if not Client.get(UrlEndPoint, Response) then
+            Error(WebServiceCall_err);
+
+        if not Response.IsSuccessStatusCode then
+            Error(WebServiceResponse_err, Response.HttpStatusCode, Response.ReasonPhrase);
+
+        Response.Content.ReadAs(TextResponse);
+        XmlDocument.ReadFrom(TextResponse, XMLDoc);
+    end;
 
     local procedure PopulateDirectories(var AzureFileShare: Record "Azure Files"; XMLDoc: XmlDocument)
     var
@@ -46,7 +69,7 @@ codeunit 52100 "Azure File Functions"
         innerXMLNode: XmlNode;
     begin
         XMLDoc.SelectNodes(DirectoryNode, XMLNodeList);
-        AzureFileShare.Name := '. .';
+        AzureFileShare.Name := '[..]';
         AzureFileShare.Type := AzureFileShare.Type::Directory;
         AzureFileShare.insert;
         foreach XMLNode in XMLNodeList do begin
