@@ -27,7 +27,7 @@ page 52101 "Azure File List"
                             Rec.SetSubPath(SubPath);
                             Rec.DeleteAll();
                         end;
-                        AzureFiles.GetFilesFromShare(Rec, Rec.GetSubPath(SubPath));
+                        AzureFiles.GetFilesAndDirectoriesFromShare(Rec, Rec.GetSubPath(SubPath));
                     end;
                 }
                 field(Size; rec.Size)
@@ -63,11 +63,12 @@ page 52101 "Azure File List"
                     AzureFileFunction: Codeunit "Azure File Functions";
                 begin
                     Rec.DeleteAll();
-                    AzureFileFunction.GetFilesFromShare(Rec, rec.GetSubPath(SubPath));
+                    AzureFileFunction.GetFilesAndDirectoriesFromShare(Rec, rec.GetSubPath(SubPath));
                 end;
             }
 
-            action(ImportFiles)
+
+            action(ShowFilesInImportFolder)
             {
                 ApplicationArea = All;
                 Image = Import;
@@ -75,8 +76,33 @@ page 52101 "Azure File List"
                 PromotedIsBig = true;
                 PromotedCategory = Process;
                 trigger OnAction();
+                var
+                    AzureFilesSetup: Record "Azure Files Setup";
+                    ListOfFiles: List of [Text];
+                    Filename: Text;
+                    AzureFileFunctions: Codeunit "Azure File Functions";
+
                 begin
-                    Xmlport.Run(52100, true, true);
+                    AzureFilesSetup.findfirst();
+                    AzureFileFunctions.GetListOfFilesFromDirectory(AzureFilesSetup."Import Folder", ListOfFiles);
+                    foreach Filename in ListOfFiles do
+                        Message(StrSubstNo(FileFound, Filename, AzureFilesSetup."Import Folder"));
+                end;
+            }
+            action(DirectImport)
+            {
+                ApplicationArea = All;
+                Image = Import;
+                Promoted = true;
+                PromotedIsBig = true;
+                PromotedCategory = Process;
+                Visible = false;
+
+                trigger OnAction();
+                var
+                    AzureFileFunctions: Codeunit "Azure File Functions";
+                begin
+                    AzureFileFunctions.ImportFilesUsingXMLport()
                 end;
             }
             action(ExportFiles)
@@ -86,6 +112,8 @@ page 52101 "Azure File List"
                 Promoted = true;
                 PromotedIsBig = true;
                 PromotedCategory = Process;
+                Visible = false;
+
                 trigger OnAction();
                 var
                     OStream: OutStream;
@@ -120,4 +148,5 @@ page 52101 "Azure File List"
         [InDataSet]
         IsBold: Boolean;
         SubPath: List of [Text];
+        FileFound: Label 'File %1 found in import folder %2';
 }

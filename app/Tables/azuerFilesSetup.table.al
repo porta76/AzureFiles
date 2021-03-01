@@ -1,3 +1,4 @@
+// Fix illegal Chars for "Import Folder"
 table 52100 "Azure Files Setup"
 {
     DataClassification = ToBeClassified;
@@ -13,6 +14,10 @@ table 52100 "Azure Files Setup"
             DataClassification = CustomerContent;
         }
         field(30; "Sas Token"; text[250])
+        {
+            DataClassification = CustomerContent;
+        }
+        field(40; "Import Folder"; text[250])
         {
             DataClassification = CustomerContent;
         }

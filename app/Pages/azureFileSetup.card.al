@@ -14,17 +14,18 @@ page 52100 "Azure File Setup"
                 field("Account"; rec."Account")
                 {
                     ApplicationArea = All;
-
                 }
                 field("Root Share"; rec."Root Share")
                 {
                     ApplicationArea = All;
-
                 }
                 field("Sas Token"; rec."Sas Token")
                 {
                     ApplicationArea = All;
-
+                }
+                field("Import Folder"; rec."Import Folder")
+                {
+                    ApplicationArea = All;
                 }
             }
         }
